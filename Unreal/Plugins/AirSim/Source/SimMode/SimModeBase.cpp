@@ -196,6 +196,9 @@ void ASimModeBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
     world_sim_api_.reset();
     api_provider_.reset();
     api_server_.reset();
+    if (simmode_name == AirSimSettings::kSimModeTypeBoth) {
+        api_server_both_.reset()
+    }
     global_ned_transform_.reset();
 
     CameraDirector = nullptr;
@@ -313,6 +316,12 @@ void ASimModeBase::setWind(const msr::airlib::Vector3r& wind) const
 }
 
 std::unique_ptr<msr::airlib::ApiServerBase> ASimModeBase::createApiServer() const
+{
+    //this will be the case when compilation with RPCLIB is disabled or simmode doesn't support APIs
+    return nullptr;
+}
+
+std::unique_ptr<msr::airlib::ApiServerBase> ASimModeBase::createApiServerBoth() const
 {
     //this will be the case when compilation with RPCLIB is disabled or simmode doesn't support APIs
     return nullptr;
@@ -539,13 +548,20 @@ void ASimModeBase::startApiServer()
 
 #ifdef AIRLIB_NO_RPC
         api_server_.reset();
+        if (simmode_name == AirSimSettings::kSimModeTypeBoth) {
+            api_server_both_.reset();
+        }
 #else
         // @TODO: Potentially can call this twice
         api_server_ = createApiServer();
+        if (simmode_name == AirSimSettings::kSimModeTypeBoth)
+            api_server_both_ = createApiServerBoth();
 #endif
 
         try {
             api_server_->start(false, spawned_actors_.Num() + 4);
+            if (simmode_name == AirSimSettings::kSimModeTypeBoth)
+                api_server_both_->start(false, spawned_actors_.Num() + 4);
         }
         catch (std::exception& ex) {
             UAirBlueprintLib::LogMessageString("Cannot start RpcLib Server", ex.what(), LogDebugLevel::Failure);
@@ -560,9 +576,15 @@ void ASimModeBase::stopApiServer()
         api_server_->stop();
         api_server_.reset(nullptr);
     }
+    if (simmode_name == AirSimSettings::kSimModeTypeBoth && api_server_both_ != nullptr) {
+        api_server_both_->stop();
+        api_server_both_.reset(nullptr);
+    }
 }
 bool ASimModeBase::isApiServerStarted()
 {
+    if (simmode_name == AirSimSettings::kSimModeTypeBoth)
+        return api_server_ != nullptr && api_server_both_ != nullptr;
     return api_server_ != nullptr;
 }
 

@@ -128,6 +128,7 @@ protected: //must overrides
     typedef msr::airlib::AirSimSettings AirSimSettings;
 
     virtual std::unique_ptr<msr::airlib::ApiServerBase> createApiServer() const;
+    virtual std::unique_ptr<msr::airlib::ApiServerBase> createApiServerBoth() const;
     virtual void getExistingVehiclePawns(TArray<AActor*>& pawns) const;
     virtual bool isVehicleTypeSupported(const std::string& vehicle_type) const;
     virtual std::string getVehiclePawnPathName(const AirSimSettings::VehicleSetting& vehicle_setting) const;
@@ -204,6 +205,7 @@ private:
     std::unique_ptr<msr::airlib::WorldSimApiBase> world_sim_api_;
     std::unique_ptr<msr::airlib::ApiProvider> api_provider_;
     std::unique_ptr<msr::airlib::ApiServerBase> api_server_;
+    std::unique_ptr<msr::airlib::ApiServerBase> api_server_both_;
     msr::airlib::StateReporterWrapper debug_reporter_;
 
     std::vector<std::unique_ptr<msr::airlib::VehicleSimApiBase>> vehicle_sim_apis_;

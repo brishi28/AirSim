@@ -107,6 +107,16 @@ std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldBoth::createApiServer()
 #endif
 }
 
+std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldBoth::createApiServerBoth() const {
+#ifdef AIRLIB_NO_RPC
+    return ASimModeBase::createApiServer();
+#else
+    return std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::CarRpcLibServer(
+        getApiProvider(), getSettings().api_server_address, 41452); // Cars use different ports
+#endif
+    
+}
+
 void ASimModeWorldBoth::getExistingVehiclePawns(TArray<AActor*>& pawns) const
 {
     TArray<AActor*> FlyingPawns;
