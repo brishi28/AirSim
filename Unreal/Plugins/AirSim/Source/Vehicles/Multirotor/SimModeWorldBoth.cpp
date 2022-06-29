@@ -16,6 +16,7 @@
 #include <memory>
 #include "vehicles/car/api/CarRpcLibServer.hpp"
 #include "vehicles/multirotor/api/MultirotorRpcLibServer.hpp"
+#include "common/SteppableClock.hpp"
 
 
 void ASimModeWorldBoth::BeginPlay()
@@ -79,21 +80,30 @@ void ASimModeWorldBoth::setupClockSpeed()
 
 //-------------------------------- overrides -----------------------------------------------//
 
-std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> ASimModeWorldBoth::createApiServer() const
+// TODO: Change this to be a single pointer. Need to potentially call this twice in the situation where both is used
+// std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> ASimModeWorldBoth::createApiServer() const
+std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldBoth::createApiServer() const
 {
-    std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> api_servers;
-#ifdef AIRLIB_NO_RPC
-    api_servers.push_back(ASimModeBase::createApiServer());
-    return api_servers;
-#else
-    uint16_t port_drone = 41451;
-    api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
-        getApiProvider(), getSettings().api_server_address, port_drone)));
+//     std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> api_servers;
+// #ifdef AIRLIB_NO_RPC
+//     api_servers.push_back(ASimModeBase::createApiServer());
+//     return api_servers;
+// #else
+//     uint16_t port_drone = 41451;
+//     api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
+//         getApiProvider(), getSettings().api_server_address, port_drone)));
 
-    uint16_t port_car = 41452;
-    api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::CarRpcLibServer(
-        getApiProvider(), getSettings().api_server_address, port_car)));
-    return api_servers;
+//     uint16_t port_car = 41452;
+//     api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::CarRpcLibServer(
+//         getApiProvider(), getSettings().api_server_address, port_car)));
+//     return api_servers;
+// #endif
+
+#ifdef AIRLIB_NO_RPC
+    return ASimModeBase::createApiServer();
+#else
+    return std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
+        getApiProvider(), getSettings().api_server_address, getSettings().api_port));
 #endif
 }
 
@@ -127,7 +137,8 @@ bool ASimModeWorldBoth::isVehicleTypeSupported(const std::string& vehicle_type) 
     return ((vehicle_type == AirSimSettings::kVehicleTypeSimpleFlight) ||
         (vehicle_type == AirSimSettings::kVehicleTypePhysXCar) ||
         (vehicle_type == AirSimSettings::kVehicleTypePX4) ||
-		(vehicle_type == AirSimSettings::kVehicleTypeArduCopterSolo));
+		(vehicle_type == AirSimSettings::kVehicleTypeArduCopterSolo) ||
+        (vehicle_type == AirSimSettings::kVehicleTypeArduCopter));
 }
 std::string ASimModeWorldBoth::getVehiclePawnPathName(const AirSimSettings::VehicleSetting& vehicle_setting) const
 {
@@ -177,7 +188,7 @@ std::unique_ptr<PawnSimApi> ASimModeWorldBoth::createVehicleSimApi(
     std::string vehicle_type = getVehicleType(pawn);
     if (vehicle_type == AirSimSettings::kVehicleTypePhysXCar){
         auto vehicle_pawn = static_cast<TCarPawn*>(pawn_sim_api_params.pawn);
-        auto vehicle_sim_api = std::unique_ptr<PawnSimApi>(new CarPawnSimApi(pawn_sim_api_params, vehicle_pawn->getKeyBoardControls(), vehicle_pawn->getVehicleMovementComponent()));
+        auto vehicle_sim_api = std::unique_ptr<PawnSimApi>(new CarPawnSimApi(pawn_sim_api_params, vehicle_pawn->getKeyBoardControls()));
         vehicle_sim_api->initialize();
         // vehicle_sim_api->reset();
         return vehicle_sim_api;
