@@ -81,39 +81,38 @@ void ASimModeWorldBoth::setupClockSpeed()
 //-------------------------------- overrides -----------------------------------------------//
 
 // TODO: Change this to be a single pointer. Need to potentially call this twice in the situation where both is used
-// std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> ASimModeWorldBoth::createApiServer() const
-std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldBoth::createApiServer() const
+std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> ASimModeWorldBoth::createApiServer() const
+// std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldBoth::createApiServer() const
 {
-//     std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> api_servers;
+    std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> api_servers;
+#ifdef AIRLIB_NO_RPC
+    return ASimModeBase::createApiServer();
+#else
+    uint16_t port_drone = 41451;
+    api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
+        getApiProvider(), getSettings().api_server_address, port_drone)));
+
+    uint16_t port_car = 41452;
+    api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::CarRpcLibServer(
+        getApiProvider(), getSettings().api_server_address, port_car)));
+    return api_servers;
+#endif
+
 // #ifdef AIRLIB_NO_RPC
-//     api_servers.push_back(ASimModeBase::createApiServer());
-//     return api_servers;
+//     return ASimModeBase::createApiServer();
 // #else
-//     uint16_t port_drone = 41451;
-//     api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
-//         getApiProvider(), getSettings().api_server_address, port_drone)));
-
-//     uint16_t port_car = 41452;
-//     api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::CarRpcLibServer(
-//         getApiProvider(), getSettings().api_server_address, port_car)));
-//     return api_servers;
+//     return std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
+//         getApiProvider(), getSettings().api_server_address, getSettings().api_port));
 // #endif
+// }
 
-#ifdef AIRLIB_NO_RPC
-    return ASimModeBase::createApiServer();
-#else
-    return std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
-        getApiProvider(), getSettings().api_server_address, getSettings().api_port));
-#endif
-}
-
-std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldBoth::createApiServerBoth() const {
-#ifdef AIRLIB_NO_RPC
-    return ASimModeBase::createApiServer();
-#else
-    return std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::CarRpcLibServer(
-        getApiProvider(), getSettings().api_server_address, 41452); // Cars use different ports
-#endif
+// std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldBoth::createApiServerBoth() const {
+// #ifdef AIRLIB_NO_RPC
+//     return ASimModeBase::createApiServer();
+// #else
+//     return std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::CarRpcLibServer(
+//         getApiProvider(), getSettings().api_server_address, 41452); // Cars use different ports
+// #endif
     
 }
 

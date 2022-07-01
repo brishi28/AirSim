@@ -195,10 +195,8 @@ void ASimModeBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
     FRecordingThread::killRecording();
     world_sim_api_.reset();
     api_provider_.reset();
-    api_server_.reset();
-    if (simmode_name == AirSimSettings::kSimModeTypeBoth) {
-        api_server_both_.reset()
-    }
+    for (auto& api_server_ : api_servers_)
+        api_server_.reset();
     global_ned_transform_.reset();
 
     CameraDirector = nullptr;
@@ -315,17 +313,17 @@ void ASimModeBase::setWind(const msr::airlib::Vector3r& wind) const
     throw std::domain_error("setWind not implemented by SimMode");
 }
 
-std::unique_ptr<msr::airlib::ApiServerBase> ASimModeBase::createApiServer() const
-{
-    //this will be the case when compilation with RPCLIB is disabled or simmode doesn't support APIs
-    return nullptr;
+std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> ASimModeBase::createApiServer() const { 
+    std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> api_servers;
+    api_servers.push_back(nullptr);
+    return api_servers;
 }
 
-std::unique_ptr<msr::airlib::ApiServerBase> ASimModeBase::createApiServerBoth() const
-{
-    //this will be the case when compilation with RPCLIB is disabled or simmode doesn't support APIs
-    return nullptr;
-}
+// std::unique_ptr<msr::airlib::ApiServerBase> ASimModeBase::createApiServer() const
+// {
+//     //this will be the case when compilation with RPCLIB is disabled or simmode doesn't support APIs
+//     return nullptr;
+// }
 
 void ASimModeBase::setupClockSpeed()
 {
@@ -547,21 +545,16 @@ void ASimModeBase::startApiServer()
     if (getSettings().enable_rpc) {
 
 #ifdef AIRLIB_NO_RPC
-        api_server_.reset();
-        if (simmode_name == AirSimSettings::kSimModeTypeBoth) {
-            api_server_both_.reset();
-        }
+        for (auto& api_server_ : api_servers_)
+            api_server_.reset();
 #else
         // @TODO: Potentially can call this twice
-        api_server_ = createApiServer();
-        if (simmode_name == AirSimSettings::kSimModeTypeBoth)
-            api_server_both_ = createApiServerBoth();
+        api_servers_ = createApiServer();
 #endif
 
         try {
-            api_server_->start(false, spawned_actors_.Num() + 4);
-            if (simmode_name == AirSimSettings::kSimModeTypeBoth)
-                api_server_both_->start(false, spawned_actors_.Num() + 4);
+            for (auto& api_server_ : api_servers_)
+                api_server_->start(false, spawned_actors_.Num() + 4);
         }
         catch (std::exception& ex) {
             UAirBlueprintLib::LogMessageString("Cannot start RpcLib Server", ex.what(), LogDebugLevel::Failure);
@@ -572,20 +565,21 @@ void ASimModeBase::startApiServer()
 }
 void ASimModeBase::stopApiServer()
 {
-    if (api_server_ != nullptr) {
-        api_server_->stop();
-        api_server_.reset(nullptr);
-    }
-    if (simmode_name == AirSimSettings::kSimModeTypeBoth && api_server_both_ != nullptr) {
-        api_server_both_->stop();
-        api_server_both_.reset(nullptr);
+    for (auto& api_server_ : api_servers_) {
+        if (api_server_ != nullptr) {
+            api_server_->stop();
+            api_server_.reset(nullptr);
+        }
     }
 }
 bool ASimModeBase::isApiServerStarted()
 {
-    if (simmode_name == AirSimSettings::kSimModeTypeBoth)
-        return api_server_ != nullptr && api_server_both_ != nullptr;
-    return api_server_ != nullptr;
+    for (auto& api_server_ : api_servers_) {
+        if (api_server_ == nullptr) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void ASimModeBase::updateDebugReport(msr::airlib::StateReporterWrapper& debug_reporter)

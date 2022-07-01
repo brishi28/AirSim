@@ -77,13 +77,15 @@ void ASimModeWorldMultiRotor::setupClockSpeed()
 
 //-------------------------------- overrides -----------------------------------------------//
 
-std::unique_ptr<msr::airlib::ApiServerBase> ASimModeWorldMultiRotor::createApiServer() const
+std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> ASimModeWorldMultiRotor::createApiServer() const
 {
 #ifdef AIRLIB_NO_RPC
     return ASimModeBase::createApiServer();
 #else
-    return std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
-        getApiProvider(), getSettings().api_server_address, getSettings().api_port));
+    std::vector<std::unique_ptr<msr::airlib::ApiServerBase>> api_servers;
+    api_servers.push_back(std::unique_ptr<msr::airlib::ApiServerBase>(new msr::airlib::MultirotorRpcLibServer(
+        getApiProvider(), getSettings().api_server_address, getSettings().api_port)));
+    return api_servers;
 #endif
 }
 
