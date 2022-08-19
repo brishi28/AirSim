@@ -109,7 +109,7 @@ namespace airlib
             return getVehicleApi(vehicle_name)->rotateByYawRate(yaw_rate, duration);
         });
         (static_cast<rpc::server*>(getServer()))->bind("hover", [&](const std::string& vehicle_name) -> bool {
-            return getVehicleApi(vehicle_name)->hover();
+            return getVehicleApi(vehicle_name)->hover(); // TODO: Figure out why this is crashing with hoverAsync().join()
         });
         (static_cast<rpc::server*>(getServer()))->bind("setAngleLevelControllerGains", [&](const vector<float>& kp, const vector<float>& ki, const vector<float>& kd, const std::string& vehicle_name) -> void {
             getVehicleApi(vehicle_name)->setAngleLevelControllerGains(kp, ki, kd);

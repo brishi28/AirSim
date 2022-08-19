@@ -45,7 +45,7 @@ airsim.wait_key('Both clients connected, press any key to begin movement')
 f1 = client_1.takeoffAsync(vehicle_name="Drone1")
 
 car_state1 = client_2.getCarState("Car1")
-print("Car1: Speed %d, Gear %d" % (car_state1.speed, car_state1.gear))
+print("Car1: Speed {}, Gear {}, Position {}".format(car_state1.speed, car_state1.gear, car_state1.kinematics_estimated.position))
 f1.join()
 state1 = client_1.getMultirotorState(vehicle_name="Drone1")
 s = pprint.pformat(state1)
